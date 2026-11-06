@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { formOptions } from "@/lib/options";
+import { getSettings, parseFees } from "@/lib/finance";
 import { round2 } from "@/lib/utils";
 import { PaymentForm } from "./PaymentForm";
 
@@ -23,6 +24,7 @@ export default async function NovoPagamento({ searchParams }: { searchParams: Pr
   }
 
   const opts = await formOptions();
+  const fees = parseFees((await getSettings()).methodFees);
   const recs = patientId
     ? await db.receivable.findMany({
         where: { patientId, canceled: false, settledAt: null },
@@ -42,7 +44,7 @@ export default async function NovoPagamento({ searchParams }: { searchParams: Pr
   return (
     <div className="mx-auto max-w-2xl space-y-4">
       <h1 className="page-title">Receber pagamento</h1>
-      <PaymentForm key={patientId ?? "x"} {...opts} patientId={patientId} receivables={receivables} receivableId={sp.parcela} preset={preset} />
+      <PaymentForm key={patientId ?? "x"} {...opts} patientId={patientId} receivables={receivables} receivableId={sp.parcela} preset={preset} fees={fees} />
     </div>
   );
 }

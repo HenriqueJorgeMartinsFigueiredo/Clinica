@@ -15,11 +15,13 @@ export default async function Caixa({ searchParams }: { searchParams: Promise<{ 
     db.expense.findMany({ where: { paidAt: range }, orderBy: { paidAt: "asc" } }),
   ]);
   const totalIn = round2(payments.reduce((s, p) => s + p.amount, 0));
-  const totalOut = round2(expenses.reduce((s, e) => s + e.amount, 0));
+  const totalFees = round2(payments.reduce((s, p) => s + p.fee, 0));
+  const totalOut = round2(expenses.reduce((s, e) => s + e.amount, 0) + totalFees);
   const byMethod = Object.keys(PAYMENT_METHODS)
     .map((m) => ({
       m,
       inn: round2(payments.filter((p) => p.method === m).reduce((s, p) => s + p.amount, 0)),
+      fees: round2(payments.filter((p) => p.method === m).reduce((s, p) => s + p.fee, 0)),
       out: round2(expenses.filter((e) => e.method === m).reduce((s, e) => s + e.amount, 0)),
     }))
     .filter((x) => x.inn || x.out);
@@ -38,7 +40,8 @@ export default async function Caixa({ searchParams }: { searchParams: Promise<{ 
 
       <div className="grid grid-cols-3 gap-3">
         <div className="card p-4"><p className="text-xs text-stone-500">Entradas</p><p className="text-xl font-semibold text-emerald-700">{fmtMoney(totalIn)}</p></div>
-        <div className="card p-4"><p className="text-xs text-stone-500">Saídas</p><p className="text-xl font-semibold text-red-600">{fmtMoney(totalOut)}</p></div>
+        <div className="card p-4"><p className="text-xs text-stone-500">Saídas{totalFees > 0 && " (com taxas)"}</p><p className="text-xl font-semibold text-red-600">{fmtMoney(totalOut)}</p>
+          {totalFees > 0 && <p className="text-xs text-stone-500">taxas de cartão: {fmtMoney(totalFees)}</p>}</div>
         <div className="card p-4"><p className="text-xs text-stone-500">Saldo do dia</p><p className="text-xl font-semibold">{fmtMoney(totalIn - totalOut)}</p></div>
       </div>
 
@@ -46,14 +49,15 @@ export default async function Caixa({ searchParams }: { searchParams: Promise<{ 
         <div className="card p-4">
           <h2 className="mb-2 text-sm font-semibold">Fechamento por forma de pagamento</h2>
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-stone-500"><tr><th className="py-1">Forma</th><th className="text-right">Entradas</th><th className="text-right">Saídas</th><th className="text-right">Saldo</th></tr></thead>
+            <thead className="text-left text-xs text-stone-500"><tr><th className="py-1">Forma</th><th className="text-right">Entradas</th><th className="text-right">Taxas</th><th className="text-right">Saídas</th><th className="text-right">Saldo</th></tr></thead>
             <tbody>
               {byMethod.map((x) => (
                 <tr key={x.m} className="border-t border-stone-100">
                   <td className="py-2">{PAYMENT_METHODS[x.m]}</td>
                   <td className="text-right">{fmtMoney(x.inn)}</td>
+                  <td className="text-right">{fmtMoney(x.fees)}</td>
                   <td className="text-right">{fmtMoney(x.out)}</td>
-                  <td className="text-right font-medium">{fmtMoney(x.inn - x.out)}</td>
+                  <td className="text-right font-medium">{fmtMoney(x.inn - x.fees - x.out)}</td>
                 </tr>
               ))}
             </tbody>
@@ -71,7 +75,7 @@ export default async function Caixa({ searchParams }: { searchParams: Promise<{ 
               <li key={p.id}>
                 <Link href={`/pagamentos/${p.id}`} className="flex items-center gap-3 p-3 text-sm hover:bg-stone-50">
                   <span className="w-12 text-stone-500">{timeKey(p.paidAt)}</span>
-                  <span className="min-w-0 flex-1"><span className="block truncate font-medium">{p.patient.name}</span><span className="block truncate text-xs text-stone-500">{p.description} · {PAYMENT_METHODS[p.method]}</span></span>
+                  <span className="min-w-0 flex-1"><span className="block truncate font-medium">{p.patient.name}</span><span className="block truncate text-xs text-stone-500">{p.description} · {PAYMENT_METHODS[p.method]}{p.fee > 0 && ` · taxa ${fmtMoney(p.fee)}`}</span></span>
                   <span className="font-medium text-emerald-700">{fmtMoney(p.amount)}</span>
                 </Link>
               </li>

@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { getSettings } from "@/lib/finance";
-import { saveSettings, saveTemplate } from "./actions";
+import { getSettings, parseFees } from "@/lib/finance";
+import { PAYMENT_METHODS } from "@/lib/utils";
+import { saveFees, saveSettings, saveTemplate } from "./actions";
 
 export default async function Configuracoes({ searchParams }: { searchParams: Promise<{ termo?: string }> }) {
   await requireUser(["ADMIN"]);
@@ -12,6 +13,7 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
     db.consentTemplate.findMany({ include: { procedure: true }, orderBy: { title: "asc" } }),
     db.procedure.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
   ]);
+  const fees = parseFees(s.methodFees);
   const editing = termo === "novo" ? null : templates.find((t) => t.id === termo);
   const showForm = termo === "novo" || !!editing;
 
@@ -28,6 +30,26 @@ export default async function Configuracoes({ searchParams }: { searchParams: Pr
         <div><label className="label">Cidade/UF</label><input name="city" className="input" defaultValue={s.city ?? ""} placeholder="São Paulo/SP" /></div>
         <div className="sm:col-span-2"><label className="label">Endereço</label><input name="address" className="input" defaultValue={s.address ?? ""} /></div>
         <div className="flex justify-end sm:col-span-2"><button className="btn-primary">Salvar dados</button></div>
+      </form>
+
+      <form action={saveFees} className="card space-y-3 p-5">
+        <div>
+          <h2 className="font-semibold">Taxas da maquininha / banco</h2>
+          <p className="text-xs text-stone-500">
+            Percentual descontado em cada forma de pagamento. A comissão das profissionais é calculada sobre o valor líquido
+            (pago pela cliente − taxa). A taxa é preenchida sozinha no recebimento e pode ser ajustada caso a caso.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {Object.entries(PAYMENT_METHODS).map(([k, v]) => (
+            <div key={k}>
+              <label className="label">{v} (%)</label>
+              <input name={`fee_${k}`} className="input" inputMode="decimal" placeholder="0"
+                defaultValue={fees[k] ? String(fees[k]).replace(".", ",") : ""} />
+            </div>
+          ))}
+        </div>
+        <div className="flex justify-end"><button className="btn-primary">Salvar taxas</button></div>
       </form>
 
       <div className="card">

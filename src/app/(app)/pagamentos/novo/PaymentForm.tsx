@@ -13,6 +13,7 @@ export function PaymentForm(props: {
   patients: Opt[]; professionals: Opt[]; procedures: Proc[];
   patientId?: string; receivables: Rec[]; receivableId?: string;
   preset?: { professionalId?: string; procedureId?: string; amount?: number; description?: string };
+  fees: Record<string, number>;
 }) {
   const router = useRouter();
   const [state, action, pending] = useFormAction(receivePayment);
@@ -22,6 +23,11 @@ export function PaymentForm(props: {
   const [amount, setAmount] = useState(
     props.preset?.amount != null ? moneyInput(props.preset.amount) : rec ? moneyInput(rec.open) : "",
   );
+  const [method, setMethod] = useState("");
+  const [feeEdited, setFeeEdited] = useState<string | null>(null);
+  const autoFee = round2((parseMoney(amount) * (props.fees[method] ?? 0)) / 100);
+  const fee = feeEdited ?? moneyInput(autoFee);
+  const net = round2(parseMoney(amount) - parseMoney(fee));
   const short = mode === "parcela" && rec ? round2(rec.open - parseMoney(amount)) : 0;
 
   return (
@@ -89,9 +95,9 @@ export function PaymentForm(props: {
             </div>
             <div>
               <label className="label">Forma de pagamento</label>
-              <select name="method" className="input" required defaultValue="">
+              <select name="method" className="input" required value={method} onChange={(e) => { setMethod(e.target.value); setFeeEdited(null); }}>
                 <option value="" disabled>Selecione...</option>
-                {Object.entries(PAYMENT_METHODS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                {Object.entries(PAYMENT_METHODS).map(([k, v]) => <option key={k} value={k}>{v}{props.fees[k] ? ` (taxa ${String(props.fees[k]).replace(".", ",")}%)` : ""}</option>)}
               </select>
             </div>
             <div>
@@ -109,7 +115,16 @@ export function PaymentForm(props: {
               </span>
             </label>
           )}
-          <p className="text-xs text-stone-500">A comissão será calculada sobre o valor recebido: {fmtMoney(parseMoney(amount))}.</p>
+          <div className="grid items-end gap-3 rounded-lg bg-stone-50 p-3 sm:grid-cols-3">
+            <div>
+              <label className="label">Taxa da maquininha (R$)</label>
+              <input name="fee" className="input" inputMode="decimal" value={fee} onChange={(e) => setFeeEdited(e.target.value)} />
+            </div>
+            <p className="text-sm sm:col-span-2">
+              Valor líquido: <b>{fmtMoney(net)}</b>
+              <span className="block text-xs text-stone-500">A comissão será calculada sobre o valor líquido.</span>
+            </p>
+          </div>
 
           <div>
             <label className="label">Observação</label>

@@ -79,9 +79,12 @@ export async function registerPayment(input: {
   description?: string | null;
   notes?: string | null;
   settle?: boolean; // quitar parcela mesmo que pago a menos
+  fee?: number; // taxa da maquininha em R$; se vazio, usa o % configurado
 }) {
+  const fee = round2(input.fee ?? (input.amount * (await methodFeePct(input.method))) / 100);
   return db.$transaction(async (tx) => {
-    const commissions = await computeCommissions(tx, input.amount, input);
+    // Comissão sobre o valor LÍQUIDO (pago pela cliente − taxa da maquininha)
+    const commissions = await computeCommissions(tx, round2(input.amount - fee), input);
     const payment = await tx.payment.create({
       data: {
         number: await nextNumber(tx, "payment"),
@@ -90,6 +93,7 @@ export async function registerPayment(input: {
         professionalId: input.receivableId ? null : input.professionalId || null,
         procedureId: input.receivableId ? null : input.procedureId || null,
         amount: round2(input.amount),
+        fee,
         method: input.method,
         paidAt: input.paidAt,
         description: input.description,
@@ -116,6 +120,19 @@ export async function receivablePaid(receivableId: string) {
 
 export async function getSettings() {
   return (await db.clinicSettings.findUnique({ where: { id: 1 } })) ?? (await db.clinicSettings.create({ data: { id: 1 } }));
+}
+
+/** % de taxa configurado para a forma de pagamento */
+export async function methodFeePct(method: string) {
+  return parseFees((await getSettings()).methodFees)[method] ?? 0;
+}
+
+export function parseFees(json: string): Record<string, number> {
+  try {
+    return JSON.parse(json) ?? {};
+  } catch {
+    return {};
+  }
 }
 
 export function budgetTotals(b: { discount: number; items: { unitPrice: number; quantity: number }[] }) {

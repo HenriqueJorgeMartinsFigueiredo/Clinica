@@ -26,6 +26,9 @@ export default async function Pagamento({ params, searchParams }: { params: Prom
           <p className="text-sm text-stone-500">Recibo nº {p.number}</p>
           <p className="text-3xl font-semibold">{fmtMoney(p.amount)}</p>
           <p className="text-sm text-stone-600">{PAYMENT_METHODS[p.method]} · {fmtDate(p.paidAt)}</p>
+          {p.fee > 0 && (
+            <p className="text-xs text-stone-500">Taxa da maquininha {fmtMoney(p.fee)} · líquido {fmtMoney(p.amount - p.fee)}</p>
+          )}
         </div>
         <p className="text-sm">
           <Link href={`/pacientes/${p.patientId}?aba=financeiro`} className="font-medium hover:text-brand-700">{p.patient.name}</Link>
@@ -47,7 +50,7 @@ export default async function Pagamento({ params, searchParams }: { params: Prom
             <p className="text-sm text-stone-500">Nenhuma comissão (profissional sem % de comissão configurado).</p>
           ) : (
             <table className="w-full text-sm">
-              <thead className="text-left text-xs text-stone-500"><tr><th className="py-1">Profissional</th><th>Base (valor pago)</th><th>%</th><th className="text-right">Comissão</th></tr></thead>
+              <thead className="text-left text-xs text-stone-500"><tr><th className="py-1">Profissional</th><th>Base (líquido)</th><th>%</th><th className="text-right">Comissão</th></tr></thead>
               <tbody>
                 {p.commissions.map((c) => (
                   <tr key={c.id} className="border-t border-stone-100">

@@ -15,6 +15,8 @@ export async function receivePayment(_: unknown, fd: FormData) {
   const date = str(fd, "paidAt") ?? todayKey();
   if (!patientId) return { error: "Escolha a cliente." };
   if (!(amount > 0)) return { error: "Informe o valor recebido." };
+  const fee = parseMoney(fd.get("fee"));
+  if (fee < 0 || fee >= amount) return { error: "Taxa da maquininha inválida." };
   if (!PAYMENT_METHODS[method]) return { error: "Escolha a forma de pagamento." };
 
   let description = str(fd, "description");
@@ -39,6 +41,7 @@ export async function receivePayment(_: unknown, fd: FormData) {
     description,
     notes: str(fd, "notes"),
     settle: fd.get("settle") === "1",
+    fee,
   });
   revalidatePath("/financeiro", "layout");
   redirect(`/pagamentos/${p.id}`);

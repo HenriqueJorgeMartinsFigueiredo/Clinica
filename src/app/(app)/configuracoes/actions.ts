@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { str } from "@/lib/utils";
+import { PAYMENT_METHODS, parseMoney, str } from "@/lib/utils";
 
 export async function saveSettings(fd: FormData) {
   await requireUser(["ADMIN"]);
@@ -14,6 +14,19 @@ export async function saveSettings(fd: FormData) {
   await db.clinicSettings.upsert({ where: { id: 1 }, update: data, create: { id: 1, ...data } });
   revalidatePath("/configuracoes");
 }
+
+export async function saveFees(fd: FormData) {
+  await requireUser(["ADMIN"]);
+  const fees: Record<string, number> = {};
+  for (const k of Object.keys(PAYMENT_METHODS)) {
+    const v = Math.min(100, Math.max(0, parseMoney(fd.get(`fee_${k}`))));
+    if (v) fees[k] = v;
+  }
+  const methodFees = JSON.stringify(fees);
+  await db.clinicSettings.upsert({ where: { id: 1 }, update: { methodFees }, create: { id: 1, methodFees } });
+  revalidatePath("/configuracoes");
+}
+
 
 export async function saveTemplate(fd: FormData) {
   await requireUser(["ADMIN"]);

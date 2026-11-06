@@ -11,7 +11,7 @@ export default async function Fluxo({ searchParams }: { searchParams: Promise<{ 
   const start = localToDate(`${year}-01-01`), end = localToDate(`${year + 1}-01-01`);
 
   const [payments, expensesPaid, recs, expensesOpen] = await Promise.all([
-    db.payment.findMany({ where: { paidAt: { gte: start, lt: end } }, select: { amount: true, paidAt: true } }),
+    db.payment.findMany({ where: { paidAt: { gte: start, lt: end } }, select: { amount: true, fee: true, paidAt: true } }),
     db.expense.findMany({ where: { paidAt: { gte: start, lt: end } }, select: { amount: true, paidAt: true } }),
     db.receivable.findMany({ where: { canceled: false, settledAt: null, dueDate: { gte: start, lt: end } }, include: { payments: { select: { amount: true } } } }),
     db.expense.findMany({ where: { paidAt: null, dueDate: { gte: start, lt: end } }, select: { amount: true, dueDate: true } }),
@@ -19,7 +19,7 @@ export default async function Fluxo({ searchParams }: { searchParams: Promise<{ 
 
   const month = (d: Date) => Number(dateKey(d).slice(5, 7)) - 1;
   const rows = Array.from({ length: 12 }, (_, m) => ({ m, inn: 0, out: 0, toReceive: 0, toPay: 0 }));
-  payments.forEach((p) => (rows[month(p.paidAt)].inn += p.amount));
+  payments.forEach((p) => { rows[month(p.paidAt)].inn += p.amount; rows[month(p.paidAt)].out += p.fee; });
   expensesPaid.forEach((e) => (rows[month(e.paidAt!)].out += e.amount));
   recs.forEach((r) => (rows[month(r.dueDate)].toReceive += Math.max(0, r.amount - r.payments.reduce((s, p) => s + p.amount, 0))));
   expensesOpen.forEach((e) => (rows[month(e.dueDate)].toPay += e.amount));
@@ -40,7 +40,7 @@ export default async function Fluxo({ searchParams }: { searchParams: Promise<{ 
         <Link href={`?ano=${year - 1}`} className="btn-secondary btn-sm" aria-label="Ano anterior"><Icon name="left" className="h-4 w-4" /></Link>
         <span className="w-16 text-center font-medium">{year}</span>
         <Link href={`?ano=${year + 1}`} className="btn-secondary btn-sm" aria-label="Próximo ano"><Icon name="right" className="h-4 w-4" /></Link>
-        <p className="ml-auto hidden text-xs text-stone-500 sm:block">Realizado = o que de fato entrou/saiu. Previsto = parcelas e contas ainda em aberto.</p>
+        <p className="ml-auto hidden text-xs text-stone-500 sm:block">Realizado = o que de fato entrou/saiu (taxas de cartão contam como saída). Previsto = parcelas e contas ainda em aberto.</p>
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full min-w-[720px] text-sm">

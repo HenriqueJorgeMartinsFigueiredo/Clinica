@@ -27,10 +27,11 @@ Sistema web (funciona no computador e no celular) para agenda, clientes e prontu
 
 ### Como a comissão é calculada
 
-A comissão nasce **no momento em que a cliente paga**, sobre o **valor que entrou**, não sobre o preço de tabela:
+A comissão nasce **no momento em que a cliente paga**, sobre o **valor líquido que entrou** (valor pago − taxa da maquininha), não sobre o preço de tabela:
 
 - Pagamento de parcela de orçamento: o valor pago é dividido entre os itens do orçamento na proporção do valor de cada um, e cada parte vai para a profissional que executa aquele item.
 - Pagamento avulso: tudo vai para a profissional informada.
+- Taxa da maquininha: configure o % de cada forma de pagamento em Configurações. Ela é preenchida sozinha ao receber e pode ser ajustada. Ex.: R$ 1.000 no crédito com 4% → comissão sobre R$ 960. No caixa e no fluxo, as taxas contam como saída.
 - Percentual: o do procedimento (se configurado), senão o padrão da profissional (em Equipe).
 - Descontos, valores negociados e parcelas não pagas **não** geram comissão. Estornar um pagamento apaga a comissão dele.
 

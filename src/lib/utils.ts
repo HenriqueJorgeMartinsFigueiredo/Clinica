@@ -90,6 +90,7 @@ export const PAYMENT_METHODS: Record<string, string> = {
   PIX: "Pix",
   DINHEIRO: "Dinheiro",
   CREDITO: "Cartão de crédito",
+  CREDITO_PARCELADO: "Crédito parcelado",
   DEBITO: "Cartão de débito",
   TRANSFERENCIA: "Transferência",
   BOLETO: "Boleto",

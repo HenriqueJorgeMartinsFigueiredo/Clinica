@@ -61,7 +61,7 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
       </div>
 
       <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
-        A comissão é calculada sobre o <b>valor efetivamente pago pela cliente</b>, na data do pagamento. Descontos, parcelas em
+        A comissão é calculada sobre o <b>valor líquido efetivamente pago pela cliente</b> (já descontada a taxa da maquininha), na data do pagamento. Descontos, parcelas em
         aberto e valores negociados não geram comissão.
       </p>
 
@@ -71,7 +71,7 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
           <div key={p.id} className="card space-y-2 p-4">
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: p.color }} /><span className="font-semibold">{p.name}</span>
               <span className="ml-auto text-xs text-stone-500">{p.commissionPct}% padrão</span></div>
-            <div className="flex justify-between text-sm"><span className="text-stone-500">Recebido das clientes</span><span>{fmtMoney(base)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-stone-500">Recebido (líquido)</span><span>{fmtMoney(base)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-stone-500">Comissão do mês</span><span className="font-semibold">{fmtMoney(total)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-stone-500">A pagar{older > 0 && " (inclui meses anteriores)"}</span><span className="font-semibold text-amber-700">{fmtMoney(pending)}</span></div>
             {isAdmin && pending > 0 && (
@@ -88,7 +88,7 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
         <h2 className="border-b border-stone-100 p-4 font-semibold">Detalhamento</h2>
         <table className="w-full min-w-[640px] text-sm">
           <thead className="text-left text-xs text-stone-500">
-            <tr><th className="p-3">Data</th><th className="p-3">Cliente</th>{!profFilter && <th className="p-3">Profissional</th>}<th className="p-3 text-right">Valor pago</th><th className="p-3 text-right">%</th><th className="p-3 text-right">Comissão</th><th className="p-3" /></tr>
+            <tr><th className="p-3">Data</th><th className="p-3">Cliente</th>{!profFilter && <th className="p-3">Profissional</th>}<th className="p-3 text-right">Base (líquido)</th><th className="p-3 text-right">%</th><th className="p-3 text-right">Comissão</th><th className="p-3" /></tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {entries.map((e) => (

@@ -126,13 +126,14 @@ model Photo {
 }
 
 model ClinicSettings {
-  id       Int     @id @default(1)
-  name     String  @default("Clínica de Estética")
-  document String? // CNPJ ou CPF
-  phone    String?
-  email    String?
-  address  String?
-  city     String?
+  id         Int     @id @default(1)
+  name       String  @default("Clínica de Estética")
+  document   String? // CNPJ ou CPF
+  phone      String?
+  email      String?
+  address    String?
+  city       String?
+  methodFees String  @default("{}") // % de taxa por forma de pagamento (JSON)
 }
 
 // Orçamento. Quando aprovado vira plano de tratamento e gera as parcelas.
@@ -202,6 +203,7 @@ model Payment {
   procedureId    String?
   procedure      Procedure?        @relation(fields: [procedureId], references: [id])
   amount         Float
+  fee            Float             @default(0) // taxa da maquininha (R$)
   method         String
   paidAt         DateTime
   description    String?
