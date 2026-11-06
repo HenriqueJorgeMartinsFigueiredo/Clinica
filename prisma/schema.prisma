@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Perfis: ADMIN (dona/gestão), PROFISSIONAL (esteticista, biomédica...), RECEPCAO
+model User {
+  id           String        @id @default(cuid())
+  name         String
+  email        String        @unique
+  passwordHash String
+  role         String        @default("PROFISSIONAL")
+  specialty    String?
+  color        String        @default("#a855f7")
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  appointments Appointment[]
+  evolutions   Evolution[]
+}
+
+model Patient {
+  id           String        @id @default(cuid())
+  name         String
+  cpf          String?
+  phone        String?
+  email        String?
+  birthDate    DateTime?
+  gender       String?
+  address      String?
+  occupation   String?
+  origin       String?       // como conheceu a clínica
+  notes        String?
+  active       Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  anamneses    Anamnesis[]
+  appointments Appointment[]
+  evolutions   Evolution[]
+  photos       Photo[]
+}
+
+model Anamnesis {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  data      String   // JSON com as respostas
+  createdAt DateTime @default(now())
+}
+
+model Procedure {
+  id           String        @id @default(cuid())
+  name         String
+  category     String?
+  durationMin  Int           @default(60)
+  price        Float         @default(0)
+  sessions     Int           @default(1)
+  description  String?
+  active       Boolean       @default(true)
+  appointments Appointment[]
+  evolutions   Evolution[]
+}
+
+// Status: AGENDADO, CONFIRMADO, EM_ATENDIMENTO, ATENDIDO, FALTOU, CANCELADO
+model Appointment {
+  id             String     @id @default(cuid())
+  patientId      String
+  patient        Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User       @relation(fields: [professionalId], references: [id])
+  procedureId    String?
+  procedure      Procedure? @relation(fields: [procedureId], references: [id])
+  start          DateTime
+  end            DateTime
+  status         String     @default("AGENDADO")
+  room           String?
+  notes          String?
+  createdAt      DateTime   @default(now())
+
+  @@index([start])
+}
+
+model Evolution {
+  id             String     @id @default(cuid())
+  patientId      String
+  patient        Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User       @relation(fields: [professionalId], references: [id])
+  procedureId    String?
+  procedure      Procedure? @relation(fields: [procedureId], references: [id])
+  date           DateTime   @default(now())
+  text           String
+  createdAt      DateTime   @default(now())
+}
+
+model Photo {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  fileName  String
+  mimeType  String
+  label     String   @default("ANTES") // ANTES, DEPOIS, OUTRO
+  region    String?
+  notes     String?
+  takenAt   DateTime @default(now())
+}
