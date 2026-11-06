@@ -1,5 +1,5 @@
 import "server-only";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE, verifySession, signSession, type SessionPayload } from "./session";
 
@@ -17,9 +17,12 @@ export async function requireUser(roles?: string[]) {
 
 export async function createSession(p: SessionPayload) {
   const c = await cookies();
+  // "secure" só quando o acesso é por HTTPS (atrás de proxy, vem em x-forwarded-proto)
+  const h = await headers();
+  const https = (h.get("x-forwarded-proto") ?? "").split(",")[0].trim() === "https";
   c.set(SESSION_COOKIE, await signSession(p), {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: https,
     sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 12,
