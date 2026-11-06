@@ -7,7 +7,7 @@ import { receivePayment } from "../actions";
 
 type Rec = { id: string; label: string; dueDate: string; open: number };
 type Opt = { id: string; name: string };
-type Proc = Opt & { price: number };
+type Proc = Opt & { price: number; supplyCost: number };
 
 export function PaymentForm(props: {
   patients: Opt[]; professionals: Opt[]; procedures: Proc[];
@@ -27,7 +27,10 @@ export function PaymentForm(props: {
   const [feeEdited, setFeeEdited] = useState<string | null>(null);
   const autoFee = round2((parseMoney(amount) * (props.fees[method] ?? 0)) / 100);
   const fee = feeEdited ?? moneyInput(autoFee);
+  const presetProc = props.procedures.find((p) => p.id === props.preset?.procedureId);
+  const [supplies, setSupplies] = useState(presetProc?.supplyCost ? moneyInput(presetProc.supplyCost) : "");
   const net = round2(parseMoney(amount) - parseMoney(fee));
+  const base = Math.max(0, round2(net - (mode === "avulso" ? parseMoney(supplies) : 0)));
   const short = mode === "parcela" && rec ? round2(rec.open - parseMoney(amount)) : 0;
 
   return (
@@ -69,7 +72,7 @@ export function PaymentForm(props: {
               <div>
                 <label className="label">Procedimento</label>
                 <select name="procedureId" className="input" defaultValue={props.preset?.procedureId ?? ""}
-                  onChange={(e) => { const p = props.procedures.find((x) => x.id === e.target.value); if (p) setAmount(moneyInput(p.price)); }}>
+                  onChange={(e) => { const p = props.procedures.find((x) => x.id === e.target.value); if (p) { setAmount(moneyInput(p.price)); setSupplies(p.supplyCost ? moneyInput(p.supplyCost) : ""); } }}>
                   <option value="">—</option>
                   {props.procedures.map((p) => <option key={p.id} value={p.id}>{p.name} ({fmtMoney(p.price)})</option>)}
                 </select>
@@ -120,9 +123,17 @@ export function PaymentForm(props: {
               <label className="label">Taxa da maquininha (R$)</label>
               <input name="fee" className="input" inputMode="decimal" value={fee} onChange={(e) => setFeeEdited(e.target.value)} />
             </div>
-            <p className="text-sm sm:col-span-2">
-              Valor líquido: <b>{fmtMoney(net)}</b>
-              <span className="block text-xs text-stone-500">A comissão será calculada sobre o valor líquido.</span>
+            {mode === "avulso" ? (
+              <div>
+                <label className="label">Insumos usados (R$)</label>
+                <input name="supplies" className="input" inputMode="decimal" placeholder="0,00" value={supplies} onChange={(e) => setSupplies(e.target.value)} />
+              </div>
+            ) : <div className="hidden sm:block" />}
+            <p className="text-sm">
+              Base da comissão: <b>{mode === "avulso" ? fmtMoney(base) : `${fmtMoney(net)} − insumos`}</b>
+              <span className="block text-xs text-stone-500">
+                {mode === "avulso" ? "Valor pago − taxa − insumos." : "Os insumos do plano são descontados na proporção do que foi pago."}
+              </span>
             </p>
           </div>
 

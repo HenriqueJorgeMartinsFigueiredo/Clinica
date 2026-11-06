@@ -6,22 +6,22 @@ import { fmtMoney, moneyInput, parseMoney, round2 } from "@/lib/utils";
 import { Icon } from "@/components/Icon";
 import { saveBudget } from "./actions";
 
-type Proc = { id: string; name: string; price: number; sessions: number };
+type Proc = { id: string; name: string; price: number; sessions: number; supplyCost: number };
 type Opt = { id: string; name: string };
-type Item = { key: number; procedureId: string | null; professionalId: string | null; description: string; unitPrice: string; quantity: number };
+type Item = { key: number; procedureId: string | null; professionalId: string | null; description: string; unitPrice: string; supplyCost: string; quantity: number };
 
 export function BudgetForm(props: {
   patients: Opt[]; professionals: Opt[]; procedures: Proc[];
   initial?: {
     id: string; patientId: string; professionalId: string; discount: number; notes: string | null; validUntil: string | null;
-    items: { procedureId: string | null; professionalId: string | null; description: string; unitPrice: number; quantity: number }[];
+    items: { procedureId: string | null; professionalId: string | null; description: string; unitPrice: number; supplyCost: number; quantity: number }[];
   };
   defaultPatientId?: string; defaultProfessionalId?: string;
 }) {
   const { initial, procedures, professionals } = props;
   const [state, action, pending] = useFormAction(saveBudget);
   const [items, setItems] = useState<Item[]>(
-    initial?.items.map((i, k) => ({ ...i, key: k, unitPrice: moneyInput(i.unitPrice) })) ?? [],
+    initial?.items.map((i, k) => ({ ...i, key: k, unitPrice: moneyInput(i.unitPrice), supplyCost: moneyInput(i.supplyCost) })) ?? [],
   );
   const [discount, setDiscount] = useState(initial ? moneyInput(initial.discount) : "");
   const [discountPct, setDiscountPct] = useState("");
@@ -33,13 +33,13 @@ export function BudgetForm(props: {
     const p = procedures.find((x) => x.id === procId);
     setItems((it) => [
       ...it,
-      { key: Date.now(), procedureId: p?.id ?? null, professionalId: null, description: p?.name ?? "", unitPrice: p ? moneyInput(p.price) : "", quantity: p?.sessions ?? 1 },
+      { key: Date.now(), procedureId: p?.id ?? null, professionalId: null, description: p?.name ?? "", unitPrice: p ? moneyInput(p.price) : "", supplyCost: p ? moneyInput(p.supplyCost) : "", quantity: p?.sessions ?? 1 },
     ]);
   };
   const upd = (key: number, patch: Partial<Item>) => setItems((it) => it.map((i) => (i.key === key ? { ...i, ...patch } : i)));
 
   const payload = JSON.stringify(
-    items.map((i) => ({ procedureId: i.procedureId, professionalId: i.professionalId || null, description: i.description, unitPrice: parseMoney(i.unitPrice), quantity: i.quantity })),
+    items.map((i) => ({ procedureId: i.procedureId, professionalId: i.professionalId || null, description: i.description, unitPrice: parseMoney(i.unitPrice), supplyCost: parseMoney(i.supplyCost), quantity: i.quantity })),
   );
 
   return (
@@ -80,11 +80,11 @@ export function BudgetForm(props: {
         <div className="space-y-3">
           {items.map((i) => (
             <div key={i.key} className="grid grid-cols-2 gap-2 rounded-lg border border-stone-200 p-3 md:grid-cols-12 md:items-end">
-              <div className="col-span-2 md:col-span-4">
+              <div className="col-span-2 md:col-span-3">
                 <label className="label">Descrição</label>
                 <input className="input" value={i.description} onChange={(e) => upd(i.key, { description: e.target.value })} required />
               </div>
-              <div className="col-span-2 md:col-span-3">
+              <div className="col-span-2 md:col-span-2">
                 <label className="label">Quem executa</label>
                 <select className="input" value={i.professionalId ?? ""} onChange={(e) => upd(i.key, { professionalId: e.target.value || null })}>
                   <option value="">A responsável</option>
@@ -94,6 +94,10 @@ export function BudgetForm(props: {
               <div className="md:col-span-2">
                 <label className="label">Valor por sessão</label>
                 <input className="input" inputMode="decimal" value={i.unitPrice} onChange={(e) => upd(i.key, { unitPrice: e.target.value })} />
+              </div>
+              <div className="md:col-span-2">
+                <label className="label" title="Não aparece para a cliente; é descontado da comissão">Insumos/sessão 🔒</label>
+                <input className="input" inputMode="decimal" placeholder="0,00" value={i.supplyCost} onChange={(e) => upd(i.key, { supplyCost: e.target.value })} />
               </div>
               <div className="md:col-span-1">
                 <label className="label">Sessões</label>

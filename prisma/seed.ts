@@ -22,15 +22,15 @@ async function main() {
     await db.procedure.createMany({
       data: [
         { name: "Avaliação estética", category: "Avaliação", durationMin: 30, price: 0 },
-        { name: "Limpeza de pele profunda", category: "Facial", durationMin: 90, price: 180 },
-        { name: "Peeling químico", category: "Facial", durationMin: 60, price: 250, sessions: 4 },
-        { name: "Microagulhamento", category: "Facial", durationMin: 60, price: 350, sessions: 3 },
-        { name: "Toxina botulínica", category: "Injetáveis", durationMin: 45, price: 1200, commissionPct: 40 },
-        { name: "Preenchimento labial", category: "Injetáveis", durationMin: 60, price: 1500 },
-        { name: "Bioestimulador de colágeno", category: "Injetáveis", durationMin: 60, price: 2200, sessions: 2 },
-        { name: "Drenagem linfática", category: "Corporal", durationMin: 60, price: 150, sessions: 10 },
-        { name: "Massagem modeladora", category: "Corporal", durationMin: 60, price: 160, sessions: 10 },
-        { name: "Depilação a laser", category: "Laser", durationMin: 30, price: 200, sessions: 8 },
+        { name: "Limpeza de pele profunda", category: "Facial", durationMin: 90, price: 180, supplyCost: 30 },
+        { name: "Peeling químico", category: "Facial", durationMin: 60, price: 250, sessions: 4, supplyCost: 40 },
+        { name: "Microagulhamento", category: "Facial", durationMin: 60, price: 350, sessions: 3, supplyCost: 60 },
+        { name: "Toxina botulínica", category: "Injetáveis", durationMin: 45, price: 1200, commissionPct: 40, supplyCost: 400 },
+        { name: "Preenchimento labial", category: "Injetáveis", durationMin: 60, price: 1500, supplyCost: 450 },
+        { name: "Bioestimulador de colágeno", category: "Injetáveis", durationMin: 60, price: 2200, sessions: 2, supplyCost: 900 },
+        { name: "Drenagem linfática", category: "Corporal", durationMin: 60, price: 150, sessions: 10, supplyCost: 10 },
+        { name: "Massagem modeladora", category: "Corporal", durationMin: 60, price: 160, sessions: 10, supplyCost: 10 },
+        { name: "Depilação a laser", category: "Laser", durationMin: 30, price: 200, sessions: 8, supplyCost: 15 },
       ],
     });
   }

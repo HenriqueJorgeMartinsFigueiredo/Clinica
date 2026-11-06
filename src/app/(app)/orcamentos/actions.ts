@@ -12,6 +12,7 @@ const itemSchema = z.object({
   professionalId: z.string().nullable(),
   description: z.string().min(1),
   unitPrice: z.number().min(0),
+  supplyCost: z.number().min(0),
   quantity: z.number().int().min(1),
 });
 

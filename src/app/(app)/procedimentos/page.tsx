@@ -23,8 +23,9 @@ export default async function Procedimentos({ searchParams }: { searchParams: Pr
           <div><label className="label">Duração (min)</label><input name="durationMin" type="number" min={5} step={5} className="input" defaultValue={editing?.durationMin ?? 60} /></div>
           <div><label className="label">Valor (R$)</label><input name="price" className="input" inputMode="decimal" defaultValue={editing ? String(editing.price).replace(".", ",") : ""} /></div>
           <div><label className="label">Sessões</label><input name="sessions" type="number" min={1} className="input" defaultValue={editing?.sessions ?? 1} /></div>
+          <div><label className="label">Insumos/sessão (R$)</label><input name="supplyCost" className="input" inputMode="decimal" placeholder="0,00" defaultValue={editing?.supplyCost ? String(editing.supplyCost).replace(".", ",") : ""} /></div>
           <div><label className="label">Comissão (%)</label><input name="commissionPct" className="input" inputMode="decimal" placeholder="Padrão da prof." defaultValue={editing?.commissionPct != null ? String(editing.commissionPct).replace(".", ",") : ""} /></div>
-          <div className="sm:col-span-3"><label className="label">Descrição</label><input name="description" className="input" defaultValue={editing?.description ?? ""} /></div>
+          <div className="sm:col-span-2"><label className="label">Descrição</label><input name="description" className="input" defaultValue={editing?.description ?? ""} /></div>
           <div><label className="label">Situação</label>
             <select name="active" className="input" defaultValue={editing?.active === false ? "0" : "1"}><option value="1">Ativo</option><option value="0">Inativo</option></select>
           </div>
@@ -39,7 +40,7 @@ export default async function Procedimentos({ searchParams }: { searchParams: Pr
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-stone-200 text-left text-xs text-stone-500">
-            <tr><th className="p-3">Procedimento</th><th className="p-3">Categoria</th><th className="p-3">Duração</th><th className="p-3">Sessões</th><th className="p-3">Comissão</th><th className="p-3 text-right">Valor</th>{isAdmin && <th />}</tr>
+            <tr><th className="p-3">Procedimento</th><th className="p-3">Categoria</th><th className="p-3">Duração</th><th className="p-3">Sessões</th><th className="p-3">Comissão</th><th className="p-3 text-right">Insumos</th><th className="p-3 text-right">Valor</th>{isAdmin && <th />}</tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {list.map((p) => (
@@ -49,6 +50,7 @@ export default async function Procedimentos({ searchParams }: { searchParams: Pr
                 <td className="p-3">{p.durationMin} min</td>
                 <td className="p-3">{p.sessions}</td>
                 <td className="p-3">{p.commissionPct != null ? `${p.commissionPct}%` : <span className="text-stone-400">padrão</span>}</td>
+                <td className="p-3 text-right text-stone-500">{p.supplyCost ? fmtMoney(p.supplyCost) : "—"}</td>
                 <td className="p-3 text-right">{fmtMoney(p.price)}</td>
                 {isAdmin && <td className="p-3 text-right"><Link href={`?editar=${p.id}`} className="text-brand-700 hover:underline">Editar</Link></td>}
               </tr>

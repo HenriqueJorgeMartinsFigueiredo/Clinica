@@ -46,7 +46,7 @@ export default async function Orcamento({ params }: { params: Promise<{ id: stri
       <div className="card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="border-b border-stone-200 text-left text-xs text-stone-500">
-            <tr><th className="p-3">Procedimento</th><th className="p-3">Profissional</th><th className="p-3 text-center">Sessões{b.status === "APROVADO" && " (feitas)"}</th><th className="p-3 text-right">Valor unit.</th><th className="p-3 text-right">Total</th></tr>
+            <tr><th className="p-3">Procedimento</th><th className="p-3">Profissional</th><th className="p-3 text-center">Sessões{b.status === "APROVADO" && " (feitas)"}</th><th className="p-3 text-right">Valor unit.</th>{s.role === "ADMIN" && <th className="p-3 text-right" title="Uso interno: não aparece no PDF">Insumos 🔒</th>}<th className="p-3 text-right">Total</th></tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {b.items.map((i) => (
@@ -59,14 +59,15 @@ export default async function Orcamento({ params }: { params: Promise<{ id: stri
                   ) : i.quantity}
                 </td>
                 <td className="p-3 text-right">{fmtMoney(i.unitPrice)}</td>
+                {s.role === "ADMIN" && <td className="p-3 text-right text-stone-500">{i.supplyCost ? fmtMoney(i.supplyCost * i.quantity) : "—"}</td>}
                 <td className="p-3 text-right">{fmtMoney(i.unitPrice * i.quantity)}</td>
               </tr>
             ))}
           </tbody>
           <tfoot className="text-right">
-            <tr><td colSpan={4} className="p-2 pt-4">Subtotal</td><td className="p-2 pt-4">{fmtMoney(t.gross)}</td></tr>
-            {t.discount > 0 && <tr><td colSpan={4} className="p-2">Desconto</td><td className="p-2 text-red-600">− {fmtMoney(t.discount)}</td></tr>}
-            <tr className="text-base font-semibold"><td colSpan={4} className="p-3">Total</td><td className="p-3">{fmtMoney(t.total)}</td></tr>
+            <tr><td colSpan={s.role === "ADMIN" ? 5 : 4} className="p-2 pt-4">Subtotal</td><td className="p-2 pt-4">{fmtMoney(t.gross)}</td></tr>
+            {t.discount > 0 && <tr><td colSpan={s.role === "ADMIN" ? 5 : 4} className="p-2">Desconto</td><td className="p-2 text-red-600">− {fmtMoney(t.discount)}</td></tr>}
+            <tr className="text-base font-semibold"><td colSpan={s.role === "ADMIN" ? 5 : 4} className="p-3">Total</td><td className="p-3">{fmtMoney(t.total)}</td></tr>
           </tfoot>
         </table>
         {b.notes && <p className="border-t border-stone-100 p-4 text-sm text-stone-600">{b.notes}</p>}

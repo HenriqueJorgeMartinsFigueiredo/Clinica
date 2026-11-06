@@ -27,15 +27,19 @@ Sistema web (funciona no computador e no celular) para agenda, clientes e prontu
 
 ### Como a comissão é calculada
 
-A comissão nasce **no momento em que a cliente paga**, sobre o **valor líquido que entrou** (valor pago − taxa da maquininha), não sobre o preço de tabela:
+A comissão nasce **no momento em que a cliente paga**, e não sobre o preço de tabela:
+
+> **base da comissão = valor pago − taxa da maquininha − custo dos insumos**  ·  **comissão = base × %**
+
 
 - Pagamento de parcela de orçamento: o valor pago é dividido entre os itens do orçamento na proporção do valor de cada um, e cada parte vai para a profissional que executa aquele item.
 - Pagamento avulso: tudo vai para a profissional informada.
 - Taxa da maquininha: configure o % de cada forma de pagamento em Configurações. Ela é preenchida sozinha ao receber e pode ser ajustada. Ex.: R$ 1.000 no crédito com 4% → comissão sobre R$ 960. No caixa e no fluxo, as taxas contam como saída.
+- Insumos: cadastre o custo por sessão em cada procedimento (ex.: toxina R$ 400). No orçamento ele é copiado para cada item (ajustável) e, como o plano costuma ser pago em parcelas, é descontado **na proporção do que foi pago** (pagou 20% do plano → desconta 20% dos insumos), de forma que ao final todos os insumos são descontados uma única vez. No avulso, é preenchido pelo procedimento e pode ser ajustado. Os insumos não aparecem para a cliente.
 - Percentual: o do procedimento (se configurado), senão o padrão da profissional (em Equipe).
 - Descontos, valores negociados e parcelas não pagas **não** geram comissão. Estornar um pagamento apaga a comissão dele.
 
-Exemplo: orçamento de R$ 2.700 (Toxina R$ 1.200 com a Ana a 40% + Drenagem R$ 1.500 com a Bia a 20%) com 10% de desconto. A cliente paga R$ 400 de uma parcela de R$ 500: Ana recebe 400 × 1200/2700 × 40% = R$ 71,11 e Bia 400 × 1500/2700 × 20% = R$ 44,44.
+Exemplo avulso: Toxina R$ 1.200 no crédito (taxa 4% = R$ 48), insumos R$ 400, comissão 40% → base R$ 752 → comissão **R$ 300,80**.
 
 ## Rodando no computador
 

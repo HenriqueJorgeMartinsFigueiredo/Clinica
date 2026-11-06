@@ -68,6 +68,7 @@ model Procedure {
   category      String?
   durationMin   Int               @default(60)
   price         Float             @default(0)
+  supplyCost    Float             @default(0) // custo de insumos por sessão (R$)
   sessions      Int               @default(1)
   description   String?
   commissionPct Float? // se vazio, usa o % da profissional
@@ -165,6 +166,7 @@ model BudgetItem {
   professional   User?         @relation(fields: [professionalId], references: [id])
   description    String
   unitPrice      Float
+  supplyCost     Float         @default(0) // insumos por sessão (R$)
   quantity       Int           @default(1) // nº de sessões
   appointments   Appointment[]
 }
@@ -204,6 +206,7 @@ model Payment {
   procedure      Procedure?        @relation(fields: [procedureId], references: [id])
   amount         Float
   fee            Float             @default(0) // taxa da maquininha (R$)
+  supplies       Float             @default(0) // insumos descontados da comissão (R$)
   method         String
   paidAt         DateTime
   description    String?
@@ -222,6 +225,9 @@ model CommissionEntry {
   payment        Payment           @relation(fields: [paymentId], references: [id], onDelete: Cascade)
   professionalId String
   professional   User              @relation(fields: [professionalId], references: [id])
+  gross          Float             @default(0) // parte do valor pago
+  fee            Float             @default(0) // parte da taxa da maquininha
+  supplies       Float             @default(0) // parte dos insumos
   base           Float // parte do valor pago que é desta profissional
   pct            Float
   amount         Float

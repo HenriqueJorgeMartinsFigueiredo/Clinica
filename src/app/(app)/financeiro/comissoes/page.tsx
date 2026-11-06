@@ -39,6 +39,7 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
       return {
         p,
         base: round2(mine.reduce((x, e) => x + e.base, 0)),
+        gross: round2(mine.reduce((x, e) => x + e.gross, 0)),
         total: round2(mine.reduce((x, e) => x + e.amount, 0)),
         pending: round2(mine.filter((e) => !e.payoutId).reduce((x, e) => x + e.amount, 0) + older),
         older: round2(older),
@@ -61,17 +62,19 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
       </div>
 
       <p className="rounded-lg bg-brand-50 p-3 text-sm text-brand-900">
-        A comissão é calculada sobre o <b>valor líquido efetivamente pago pela cliente</b> (já descontada a taxa da maquininha), na data do pagamento. Descontos, parcelas em
+        Base da comissão = <b>valor pago pela cliente − taxa da maquininha − custo dos insumos</b>, apurada na data do pagamento. Descontos, parcelas em
         aberto e valores negociados não geram comissão.
       </p>
 
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
         {summary.length === 0 && <p className="card p-6 text-center text-sm text-stone-500 md:col-span-3">Nenhuma comissão neste mês.</p>}
-        {summary.map(({ p, base, total, pending, older }) => (
+        {summary.map(({ p, base, gross, total, pending, older }) => (
           <div key={p.id} className="card space-y-2 p-4">
             <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full" style={{ background: p.color }} /><span className="font-semibold">{p.name}</span>
               <span className="ml-auto text-xs text-stone-500">{p.commissionPct}% padrão</span></div>
-            <div className="flex justify-between text-sm"><span className="text-stone-500">Recebido (líquido)</span><span>{fmtMoney(base)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-stone-500">Pago pelas clientes</span><span>{fmtMoney(gross)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-stone-500">− taxas e insumos</span><span className="text-stone-500">{fmtMoney(gross - base)}</span></div>
+            <div className="flex justify-between text-sm"><span className="text-stone-500">Base da comissão</span><span>{fmtMoney(base)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-stone-500">Comissão do mês</span><span className="font-semibold">{fmtMoney(total)}</span></div>
             <div className="flex justify-between text-sm"><span className="text-stone-500">A pagar{older > 0 && " (inclui meses anteriores)"}</span><span className="font-semibold text-amber-700">{fmtMoney(pending)}</span></div>
             {isAdmin && pending > 0 && (
@@ -86,9 +89,9 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
 
       <div className="card overflow-x-auto">
         <h2 className="border-b border-stone-100 p-4 font-semibold">Detalhamento</h2>
-        <table className="w-full min-w-[640px] text-sm">
+        <table className="w-full min-w-[820px] text-sm">
           <thead className="text-left text-xs text-stone-500">
-            <tr><th className="p-3">Data</th><th className="p-3">Cliente</th>{!profFilter && <th className="p-3">Profissional</th>}<th className="p-3 text-right">Base (líquido)</th><th className="p-3 text-right">%</th><th className="p-3 text-right">Comissão</th><th className="p-3" /></tr>
+            <tr><th className="p-3">Data</th><th className="p-3">Cliente</th>{!profFilter && <th className="p-3">Profissional</th>}<th className="p-3 text-right">Pago</th><th className="p-3 text-right">Taxa</th><th className="p-3 text-right">Insumos</th><th className="p-3 text-right">Base</th><th className="p-3 text-right">%</th><th className="p-3 text-right">Comissão</th><th className="p-3" /></tr>
           </thead>
           <tbody className="divide-y divide-stone-100">
             {entries.map((e) => (
@@ -97,6 +100,9 @@ export default async function Comissoes({ searchParams }: { searchParams: Promis
                 <td className="p-3">{isAdmin ? <Link href={`/pagamentos/${e.paymentId}`} className="hover:text-brand-700">{e.payment.patient.name}</Link> : e.payment.patient.name}
                   <span className="block text-xs text-stone-500">{e.payment.description}</span></td>
                 {!profFilter && <td className="p-3">{e.professional.name}</td>}
+                <td className="p-3 text-right">{fmtMoney(e.gross)}</td>
+                <td className="p-3 text-right text-stone-500">{e.fee ? `− ${fmtMoney(e.fee)}` : "—"}</td>
+                <td className="p-3 text-right text-stone-500">{e.supplies ? `− ${fmtMoney(e.supplies)}` : "—"}</td>
                 <td className="p-3 text-right">{fmtMoney(e.base)}</td>
                 <td className="p-3 text-right">{e.pct}%</td>
                 <td className="p-3 text-right font-medium">{fmtMoney(e.amount)}</td>

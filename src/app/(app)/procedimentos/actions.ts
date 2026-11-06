@@ -12,6 +12,7 @@ export async function saveProcedure(fd: FormData) {
     category: str(fd, "category"),
     durationMin: Number(str(fd, "durationMin") ?? 60),
     price: parseMoney(fd.get("price")),
+    supplyCost: parseMoney(fd.get("supplyCost")),
     sessions: Number(str(fd, "sessions") ?? 1),
     description: str(fd, "description"),
     commissionPct: str(fd, "commissionPct") ? Math.min(100, Math.max(0, parseMoney(fd.get("commissionPct")))) : null,

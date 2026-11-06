@@ -17,6 +17,7 @@ export async function receivePayment(_: unknown, fd: FormData) {
   if (!(amount > 0)) return { error: "Informe o valor recebido." };
   const fee = parseMoney(fd.get("fee"));
   if (fee < 0 || fee >= amount) return { error: "Taxa da maquininha inválida." };
+  if (parseMoney(fd.get("supplies")) < 0) return { error: "Valor de insumos inválido." };
   if (!PAYMENT_METHODS[method]) return { error: "Escolha a forma de pagamento." };
 
   let description = str(fd, "description");
@@ -42,6 +43,7 @@ export async function receivePayment(_: unknown, fd: FormData) {
     notes: str(fd, "notes"),
     settle: fd.get("settle") === "1",
     fee,
+    supplies: receivableId ? null : parseMoney(fd.get("supplies")),
   });
   revalidatePath("/financeiro", "layout");
   redirect(`/pagamentos/${p.id}`);

@@ -49,17 +49,19 @@ export default async function Pagamento({ params, searchParams }: { params: Prom
           {p.commissions.length === 0 ? (
             <p className="text-sm text-stone-500">Nenhuma comissão (profissional sem % de comissão configurado).</p>
           ) : (
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-stone-500"><tr><th className="py-1">Profissional</th><th>Base (líquido)</th><th>%</th><th className="text-right">Comissão</th></tr></thead>
+            <div className="overflow-x-auto"><table className="w-full min-w-[520px] text-sm">
+              <thead className="text-right text-xs text-stone-500"><tr><th className="py-1 text-left">Profissional</th><th>Pago</th><th>Taxa</th><th>Insumos</th><th>Base</th><th>%</th><th>Comissão</th></tr></thead>
               <tbody>
                 {p.commissions.map((c) => (
-                  <tr key={c.id} className="border-t border-stone-100">
-                    <td className="py-2">{c.professional.name}</td><td>{fmtMoney(c.base)}</td><td>{c.pct}%</td>
+                  <tr key={c.id} className="border-t border-stone-100 text-right">
+                    <td className="py-2 text-left">{c.professional.name}</td><td>{fmtMoney(c.gross)}</td>
+                    <td className="text-stone-500">− {fmtMoney(c.fee)}</td><td className="text-stone-500">− {fmtMoney(c.supplies)}</td>
+                    <td className="font-medium">{fmtMoney(c.base)}</td><td>{c.pct}%</td>
                     <td className="text-right font-medium">{fmtMoney(c.amount)} {c.payoutId && <span className="badge ml-1 border-emerald-300 bg-emerald-50 text-emerald-700">paga</span>}</td>
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           )}
         </div>
       )}
