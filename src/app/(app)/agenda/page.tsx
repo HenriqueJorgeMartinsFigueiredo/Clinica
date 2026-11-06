@@ -8,7 +8,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
   const { data } = await searchParams;
   const day = data && /^\d{4}-\d{2}-\d{2}$/.test(data) ? data : todayKey();
 
-  const [appointments, professionals, procedures, patients] = await Promise.all([
+  const [appointments, professionals, procedures, patients, pkgItems] = await Promise.all([
     db.appointment.findMany({
       where: { start: { gte: localToDate(day), lt: localToDate(addDays(day, 1)) } },
       include: { patient: { select: { id: true, name: true, phone: true } }, procedure: true },
@@ -21,7 +21,16 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
     }),
     db.procedure.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     db.patient.findMany({ where: { active: true }, select: { id: true, name: true, phone: true }, orderBy: { name: "asc" } }),
+    db.budgetItem.findMany({
+      where: { budget: { status: "APROVADO" } },
+      include: { budget: { select: { patientId: true, number: true } }, appointments: { where: { status: "ATENDIDO" }, select: { id: true } } },
+    }),
   ]);
+  const packages = pkgItems.map((i) => ({
+    id: i.id, patientId: i.budget.patientId, procedureId: i.procedureId,
+    label: `${i.description} (nº ${i.budget.number}) — ${i.appointments.length}/${i.quantity} feitas`,
+    done: i.appointments.length >= i.quantity,
+  }));
 
   return (
     <AgendaClient
@@ -32,6 +41,7 @@ export default async function AgendaPage({ searchParams }: { searchParams: Promi
       professionals={professionals}
       procedures={procedures.map((p) => ({ id: p.id, name: p.name, durationMin: p.durationMin }))}
       patients={patients}
+      packages={packages}
     />
   );
 }

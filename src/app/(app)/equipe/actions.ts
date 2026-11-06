@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { ROLES, str } from "@/lib/utils";
+import { ROLES, parseMoney, str } from "@/lib/utils";
 
 export async function saveUser(_: unknown, fd: FormData) {
   const me = await requireUser(["ADMIN"]);
@@ -24,6 +24,7 @@ export async function saveUser(_: unknown, fd: FormData) {
     name: str(fd, "name")!, email, role, active,
     specialty: str(fd, "specialty"),
     color: str(fd, "color") ?? "#a855f7",
+    commissionPct: Math.min(100, Math.max(0, parseMoney(fd.get("commissionPct")))),
     ...(password ? { passwordHash: await bcrypt.hash(password, 10) } : {}),
   };
   if (id) await db.user.update({ where: { id }, data });

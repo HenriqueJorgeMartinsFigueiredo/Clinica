@@ -13,6 +13,29 @@ Sistema web (funciona no computador e no celular) para agenda, clientes e prontu
 - **Início**: resumo do dia, confirmações pendentes de amanhã e aniversariantes do mês (com parabéns pelo WhatsApp)
 - Pode ser "instalado" no celular (menu do navegador → *Adicionar à tela inicial*)
 
+## Etapa 2 — Orçamentos e financeiro
+
+- **Orçamentos / planos de tratamento**: vários procedimentos, profissional por item, sessões, desconto em R$ ou %, validade, PDF e envio por WhatsApp. Ao aprovar, informa entrada + nº de parcelas e o sistema gera as contas a receber
+- **Pacotes de sessões**: na agenda, o atendimento pode ser marcado como sessão de um pacote; conta quando fica "Atendido" (ex.: Drenagem 3 de 10)
+- **Receber pagamento**: de parcela ou avulso, valor livre, forma de pagamento, opção de quitar parcela com desconto, recibo em PDF com valor por extenso
+- **Caixa do dia**: entradas, saídas e fechamento por forma de pagamento
+- **Contas a receber**: por mês, vencidas, cobrança pelo WhatsApp
+- **Contas a pagar**: categorias, contas que se repetem todo mês, baixa de pagamento
+- **Fluxo de caixa**: realizado × previsto por mês, com saldo acumulado
+- **Comissões sobre o valor efetivamente pago** (ver abaixo), com pagamento à profissional que vira despesa automaticamente
+- **Termos de consentimento em PDF**: modelos editáveis em Configurações, preenchidos com os dados da cliente
+
+### Como a comissão é calculada
+
+A comissão nasce **no momento em que a cliente paga**, sobre o **valor que entrou**, não sobre o preço de tabela:
+
+- Pagamento de parcela de orçamento: o valor pago é dividido entre os itens do orçamento na proporção do valor de cada um, e cada parte vai para a profissional que executa aquele item.
+- Pagamento avulso: tudo vai para a profissional informada.
+- Percentual: o do procedimento (se configurado), senão o padrão da profissional (em Equipe).
+- Descontos, valores negociados e parcelas não pagas **não** geram comissão. Estornar um pagamento apaga a comissão dele.
+
+Exemplo: orçamento de R$ 2.700 (Toxina R$ 1.200 com a Ana a 40% + Drenagem R$ 1.500 com a Bia a 20%) com 10% de desconto. A cliente paga R$ 400 de uma parcela de R$ 500: Ana recebe 400 × 1200/2700 × 40% = R$ 71,11 e Bia 400 × 1500/2700 × 20% = R$ 44,44.
+
 ## Rodando no computador
 
 ```bash
@@ -34,7 +57,6 @@ Next.js 15 (App Router, Server Actions) · React 19 · Prisma · SQLite · Tailw
 
 ## Próximas etapas
 
-2. Orçamentos/planos de tratamento, financeiro (caixa, contas a pagar/receber), comissões, recibos e termos em PDF
 3. Lembretes automáticos de WhatsApp, pacotes de sessões, estoque de produtos, relatórios
 4. Agendamento online pela cliente, nota fiscal, assinatura digital
 

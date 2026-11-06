@@ -9,17 +9,25 @@ datasource db {
 
 // Perfis: ADMIN (dona/gestão), PROFISSIONAL (esteticista, biomédica...), RECEPCAO
 model User {
-  id           String        @id @default(cuid())
-  name         String
-  email        String        @unique
-  passwordHash String
-  role         String        @default("PROFISSIONAL")
-  specialty    String?
-  color        String        @default("#a855f7")
-  active       Boolean       @default(true)
-  createdAt    DateTime      @default(now())
-  appointments Appointment[]
-  evolutions   Evolution[]
+  id            String             @id @default(cuid())
+  name          String
+  email         String             @unique
+  passwordHash  String
+  role          String             @default("PROFISSIONAL")
+  specialty     String?
+  color         String             @default("#a855f7")
+  commissionPct Float              @default(0) // % padrão de comissão
+  active        Boolean            @default(true)
+  createdAt     DateTime           @default(now())
+  appointments  Appointment[]
+  evolutions    Evolution[]
+  budgets       Budget[]
+  budgetItems   BudgetItem[]
+  receivables   Receivable[]
+  payments      Payment[]          @relation("PaymentProfessional")
+  paymentsMade  Payment[]          @relation("PaymentCreatedBy")
+  commissions   CommissionEntry[]
+  payouts       CommissionPayout[]
 }
 
 model Patient {
@@ -32,7 +40,7 @@ model Patient {
   gender       String?
   address      String?
   occupation   String?
-  origin       String?       // como conheceu a clínica
+  origin       String? // como conheceu a clínica
   notes        String?
   active       Boolean       @default(true)
   createdAt    DateTime      @default(now())
@@ -41,44 +49,53 @@ model Patient {
   appointments Appointment[]
   evolutions   Evolution[]
   photos       Photo[]
+  budgets      Budget[]
+  receivables  Receivable[]
+  payments     Payment[]
 }
 
 model Anamnesis {
   id        String   @id @default(cuid())
   patientId String
   patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  data      String   // JSON com as respostas
+  data      String // JSON com as respostas
   createdAt DateTime @default(now())
 }
 
 model Procedure {
-  id           String        @id @default(cuid())
-  name         String
-  category     String?
-  durationMin  Int           @default(60)
-  price        Float         @default(0)
-  sessions     Int           @default(1)
-  description  String?
-  active       Boolean       @default(true)
-  appointments Appointment[]
-  evolutions   Evolution[]
+  id            String            @id @default(cuid())
+  name          String
+  category      String?
+  durationMin   Int               @default(60)
+  price         Float             @default(0)
+  sessions      Int               @default(1)
+  description   String?
+  commissionPct Float? // se vazio, usa o % da profissional
+  active        Boolean           @default(true)
+  appointments  Appointment[]
+  evolutions    Evolution[]
+  budgetItems   BudgetItem[]
+  payments      Payment[]
+  consents      ConsentTemplate[]
 }
 
 // Status: AGENDADO, CONFIRMADO, EM_ATENDIMENTO, ATENDIDO, FALTOU, CANCELADO
 model Appointment {
-  id             String     @id @default(cuid())
+  id             String      @id @default(cuid())
   patientId      String
-  patient        Patient    @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  patient        Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
   professionalId String
-  professional   User       @relation(fields: [professionalId], references: [id])
+  professional   User        @relation(fields: [professionalId], references: [id])
   procedureId    String?
-  procedure      Procedure? @relation(fields: [procedureId], references: [id])
+  procedure      Procedure?  @relation(fields: [procedureId], references: [id])
   start          DateTime
   end            DateTime
-  status         String     @default("AGENDADO")
+  status         String      @default("AGENDADO")
   room           String?
   notes          String?
-  createdAt      DateTime   @default(now())
+  budgetItemId   String? // sessão de um pacote/plano de tratamento
+  budgetItem     BudgetItem? @relation(fields: [budgetItemId], references: [id], onDelete: SetNull)
+  createdAt      DateTime    @default(now())
 
   @@index([start])
 }
@@ -106,4 +123,144 @@ model Photo {
   region    String?
   notes     String?
   takenAt   DateTime @default(now())
+}
+
+model ClinicSettings {
+  id       Int     @id @default(1)
+  name     String  @default("Clínica de Estética")
+  document String? // CNPJ ou CPF
+  phone    String?
+  email    String?
+  address  String?
+  city     String?
+}
+
+// Orçamento. Quando aprovado vira plano de tratamento e gera as parcelas.
+// Status: ABERTO, APROVADO, RECUSADO, CANCELADO
+model Budget {
+  id             String       @id @default(cuid())
+  number         Int          @unique
+  patientId      String
+  patient        Patient      @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User         @relation(fields: [professionalId], references: [id])
+  status         String       @default("ABERTO")
+  discount       Float        @default(0)
+  notes          String?
+  validUntil     DateTime?
+  approvedAt     DateTime?
+  createdAt      DateTime     @default(now())
+  items          BudgetItem[]
+  receivables    Receivable[]
+}
+
+model BudgetItem {
+  id             String        @id @default(cuid())
+  budgetId       String
+  budget         Budget        @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  procedureId    String?
+  procedure      Procedure?    @relation(fields: [procedureId], references: [id])
+  professionalId String?
+  professional   User?         @relation(fields: [professionalId], references: [id])
+  description    String
+  unitPrice      Float
+  quantity       Int           @default(1) // nº de sessões
+  appointments   Appointment[]
+}
+
+// Conta a receber (parcela)
+model Receivable {
+  id             String    @id @default(cuid())
+  patientId      String
+  patient        Patient   @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  budgetId       String?
+  budget         Budget?   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  professionalId String? // usado quando não há orçamento
+  professional   User?     @relation(fields: [professionalId], references: [id])
+  description    String
+  installment    String? // "2/5"
+  dueDate        DateTime
+  amount         Float
+  settledAt      DateTime? // quitada (mesmo que pago menos, ex.: desconto negociado)
+  canceled       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  payments       Payment[]
+
+  @@index([dueDate])
+}
+
+// Dinheiro que ENTROU. É daqui que nasce a comissão.
+model Payment {
+  id             String            @id @default(cuid())
+  number         Int               @unique // nº do recibo
+  patientId      String
+  patient        Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  receivableId   String?
+  receivable     Receivable?       @relation(fields: [receivableId], references: [id], onDelete: SetNull)
+  professionalId String? // pagamento avulso
+  professional   User?             @relation("PaymentProfessional", fields: [professionalId], references: [id])
+  procedureId    String?
+  procedure      Procedure?        @relation(fields: [procedureId], references: [id])
+  amount         Float
+  method         String
+  paidAt         DateTime
+  description    String?
+  notes          String?
+  createdById    String
+  createdBy      User              @relation("PaymentCreatedBy", fields: [createdById], references: [id])
+  createdAt      DateTime          @default(now())
+  commissions    CommissionEntry[]
+
+  @@index([paidAt])
+}
+
+model CommissionEntry {
+  id             String            @id @default(cuid())
+  paymentId      String
+  payment        Payment           @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  professionalId String
+  professional   User              @relation(fields: [professionalId], references: [id])
+  base           Float // parte do valor pago que é desta profissional
+  pct            Float
+  amount         Float
+  payoutId       String?
+  payout         CommissionPayout? @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+}
+
+model CommissionPayout {
+  id             String            @id @default(cuid())
+  professionalId String
+  professional   User              @relation(fields: [professionalId], references: [id])
+  amount         Float
+  paidAt         DateTime
+  createdAt      DateTime          @default(now())
+  entries        CommissionEntry[]
+  expense        Expense?
+}
+
+// Conta a pagar / despesa
+model Expense {
+  id          String            @id @default(cuid())
+  description String
+  category    String
+  supplier    String?
+  dueDate     DateTime
+  amount      Float
+  paidAt      DateTime?
+  method      String?
+  notes       String?
+  payoutId    String?           @unique
+  payout      CommissionPayout? @relation(fields: [payoutId], references: [id], onDelete: Cascade)
+  createdAt   DateTime          @default(now())
+
+  @@index([dueDate])
+}
+
+model ConsentTemplate {
+  id          String     @id @default(cuid())
+  title       String
+  body        String
+  procedureId String?
+  procedure   Procedure? @relation(fields: [procedureId], references: [id], onDelete: SetNull)
+  active      Boolean    @default(true)
 }

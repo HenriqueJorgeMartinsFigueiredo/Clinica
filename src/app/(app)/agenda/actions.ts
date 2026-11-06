@@ -48,7 +48,14 @@ export async function saveAppointment(_: unknown, fd: FormData): Promise<ActionR
     patientId = p.id;
   }
 
+  const budgetItemId = str(fd, "budgetItemId");
+  if (budgetItemId) {
+    const item = await db.budgetItem.findUnique({ where: { id: budgetItemId }, include: { budget: true } });
+    if (!item || item.budget.patientId !== patientId || item.budget.status !== "APROVADO") return { error: "Pacote inválido para esta cliente." };
+  }
+
   const data = {
+    budgetItemId,
     patientId: patientId!,
     professionalId,
     procedureId,

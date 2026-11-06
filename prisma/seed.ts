@@ -16,6 +16,8 @@ async function main() {
     create: { name: "Administradora", email: adminEmail, role: "ADMIN", color: "#b93a62", passwordHash: await bcrypt.hash(adminPass, 10) },
   });
 
+  await db.clinicSettings.upsert({ where: { id: 1 }, update: {}, create: { id: 1, name: "Clínica de Estética" } });
+
   if ((await db.procedure.count()) === 0) {
     await db.procedure.createMany({
       data: [
@@ -23,7 +25,7 @@ async function main() {
         { name: "Limpeza de pele profunda", category: "Facial", durationMin: 90, price: 180 },
         { name: "Peeling químico", category: "Facial", durationMin: 60, price: 250, sessions: 4 },
         { name: "Microagulhamento", category: "Facial", durationMin: 60, price: 350, sessions: 3 },
-        { name: "Toxina botulínica", category: "Injetáveis", durationMin: 45, price: 1200 },
+        { name: "Toxina botulínica", category: "Injetáveis", durationMin: 45, price: 1200, commissionPct: 40 },
         { name: "Preenchimento labial", category: "Injetáveis", durationMin: 60, price: 1500 },
         { name: "Bioestimulador de colágeno", category: "Injetáveis", durationMin: 60, price: 2200, sessions: 2 },
         { name: "Drenagem linfática", category: "Corporal", durationMin: 60, price: 150, sessions: 10 },
@@ -33,10 +35,20 @@ async function main() {
     });
   }
 
+  if ((await db.consentTemplate.count()) === 0) {
+    const procs = await db.procedure.findMany();
+    const id = (n: string) => procs.find((p) => p.name === n)?.id;
+    await db.consentTemplate.createMany({ data: [
+      { title: "Termo geral para procedimentos estéticos", body: TERMO_GERAL },
+      { title: "Toxina botulínica", procedureId: id("Toxina botulínica"), body: TERMO_TOXINA },
+      { title: "Preenchimento com ácido hialurônico", procedureId: id("Preenchimento labial"), body: TERMO_PREENCHIMENTO },
+    ] });
+  }
+
   if (process.env.SEED_DEMO) {
     const pass = await bcrypt.hash("trocar123", 10);
-    const ana = await db.user.upsert({ where: { email: "ana@clinica.com" }, update: {}, create: { name: "Ana Souza", email: "ana@clinica.com", role: "PROFISSIONAL", specialty: "Biomédica esteta", color: "#8b5cf6", passwordHash: pass } });
-    const bia = await db.user.upsert({ where: { email: "bia@clinica.com" }, update: {}, create: { name: "Beatriz Lima", email: "bia@clinica.com", role: "PROFISSIONAL", specialty: "Esteticista", color: "#0ea5e9", passwordHash: pass } });
+    const ana = await db.user.upsert({ where: { email: "ana@clinica.com" }, update: {}, create: { name: "Ana Souza", email: "ana@clinica.com", role: "PROFISSIONAL", specialty: "Biomédica esteta", color: "#8b5cf6", commissionPct: 30, passwordHash: pass } });
+    const bia = await db.user.upsert({ where: { email: "bia@clinica.com" }, update: {}, create: { name: "Beatriz Lima", email: "bia@clinica.com", role: "PROFISSIONAL", specialty: "Esteticista", color: "#0ea5e9", commissionPct: 20, passwordHash: pass } });
     await db.user.upsert({ where: { email: "recepcao@clinica.com" }, update: {}, create: { name: "Carla (Recepção)", email: "recepcao@clinica.com", role: "RECEPCAO", color: "#64748b", passwordHash: pass } });
 
     const procs = await db.procedure.findMany();
@@ -75,3 +87,38 @@ async function main() {
 }
 
 main().finally(() => db.$disconnect());
+
+// ---------- Modelos de termo (edite em Configurações) ----------
+const TERMO_GERAL = `Eu, {{paciente}}, CPF {{cpf}}, declaro que fui devidamente informada pela equipe da {{clinica}} sobre o procedimento de {{procedimento}}, seus objetivos, benefícios esperados, riscos, possíveis efeitos colaterais e cuidados necessários antes e depois da sua realização.
+
+Declaro que respondi com sinceridade à ficha de anamnese, não omitindo informações sobre minha saúde, uso de medicamentos, alergias, gestação ou tratamentos anteriores, ciente de que a omissão de informações pode comprometer o resultado e minha segurança.
+
+Estou ciente de que os resultados em estética variam de pessoa para pessoa, dependem da resposta individual do organismo e dos cuidados domiciliares, não havendo garantia de resultado específico.
+
+Comprometo-me a seguir as orientações recebidas e a comunicar imediatamente à clínica qualquer reação ou intercorrência.
+
+Autorizo o registro fotográfico do antes e depois para fins de acompanhamento do tratamento e prontuário, com garantia de sigilo conforme a Lei Geral de Proteção de Dados (Lei 13.709/2018).
+
+Tive a oportunidade de esclarecer todas as minhas dúvidas e, de forma livre e consciente, autorizo a realização do procedimento.`;
+
+const TERMO_TOXINA = `Eu, {{paciente}}, CPF {{cpf}}, {{idade}} anos, autorizo a realização do procedimento de aplicação de toxina botulínica na {{clinica}}.
+
+Fui informada de que o efeito começa a aparecer entre 3 e 15 dias após a aplicação e dura em média de 4 a 6 meses, podendo variar.
+
+Fui informada dos possíveis efeitos adversos, geralmente temporários: dor, vermelhidão, inchaço ou hematoma no local, dor de cabeça, assimetria, queda temporária da pálpebra ou da sobrancelha.
+
+Declaro não estar gestante ou amamentando, não ter doenças neuromusculares (como miastenia gravis) e não fazer uso de medicamentos que interfiram na ação da toxina, conforme informado na anamnese.
+
+Comprometo-me a seguir as orientações pós-procedimento: não deitar nas 4 horas seguintes, não massagear a região, evitar atividade física intensa, calor excessivo e bebidas alcoólicas nas primeiras 24 horas.
+
+Estou ciente de que o retorno para avaliação deve ser feito em até 15 dias.`;
+
+const TERMO_PREENCHIMENTO = `Eu, {{paciente}}, CPF {{cpf}}, autorizo a realização do procedimento de preenchimento com ácido hialurônico na {{clinica}}.
+
+Fui informada de que o ácido hialurônico é absorvido gradualmente pelo organismo, com duração média de 6 a 18 meses, variando conforme a região e o metabolismo.
+
+Fui informada dos possíveis efeitos adversos: dor, inchaço, vermelhidão, hematomas, nódulos, assimetria e, raramente, infecção, reação alérgica ou oclusão vascular, que exige atendimento imediato.
+
+Comprometo-me a comunicar imediatamente à clínica caso perceba dor intensa, mudança de cor da pele (palidez ou manchas arroxeadas) ou alteração na visão.
+
+Comprometo-me a seguir as orientações: evitar maquiagem por 12 horas, calor excessivo, atividade física e bebidas alcoólicas por 24 a 48 horas, e não massagear a região sem orientação.`;

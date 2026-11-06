@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { STATUS, addDays, capFirst, fmtDate, localToDate, timeKey, todayKey, whatsappLink } from "@/lib/utils";
+import { STATUS, addDays, capFirst, fmtDate, fmtMoney, localToDate, round2, timeKey, todayKey, whatsappLink } from "@/lib/utils";
 import { Icon } from "@/components/Icon";
 
 export default async function Dashboard() {
@@ -24,6 +24,15 @@ export default async function Dashboard() {
     db.patient.findMany({ where: { active: true, birthDate: { not: null } }, select: { id: true, name: true, birthDate: true, phone: true } }),
   ]);
 
+  const showFinance = s.role !== "PROFISSIONAL";
+  const [receivedToday, overdueRecs] = showFinance
+    ? await Promise.all([
+        db.payment.aggregate({ where: { paidAt: { gte: start, lt: end } }, _sum: { amount: true } }),
+        db.receivable.findMany({ where: { canceled: false, settledAt: null, dueDate: { lt: start } }, include: { payments: { select: { amount: true } } } }),
+      ])
+    : [null, []];
+  const overdue = round2(overdueRecs.reduce((acc, r) => acc + Math.max(0, r.amount - r.payments.reduce((x, p) => x + p.amount, 0)), 0));
+
   const month = Number(today.slice(5, 7));
   const birthdays = patientsBday
     .filter((p) => p.birthDate && p.birthDate.getUTCMonth() + 1 === month)
@@ -45,6 +54,12 @@ export default async function Dashboard() {
         <Stat label="A confirmar amanhã" value={tomorrowPending} href={`/agenda?data=${addDays(today, 1)}`} />
         <Stat label="Clientes ativas" value={totalPatients} href="/pacientes" />
       </div>
+      {showFinance && (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <Stat label="Recebido hoje" value={fmtMoney(receivedToday?._sum.amount ?? 0)} href="/financeiro" />
+          <Stat label="Parcelas vencidas" value={fmtMoney(overdue)} href="/financeiro/receber?vencidas=1" alert={overdue > 0} />
+        </div>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-3">
         <section className="card lg:col-span-2">
@@ -107,11 +122,11 @@ export default async function Dashboard() {
   );
 }
 
-function Stat({ label, value, href }: { label: string; value: number; href?: string }) {
+function Stat({ label, value, href, alert }: { label: string; value: number | string; href?: string; alert?: boolean }) {
   const inner = (
     <div className="card p-4">
       <p className="text-xs text-stone-500">{label}</p>
-      <p className="mt-1 text-2xl font-semibold text-stone-900">{value}</p>
+      <p className={`mt-1 text-2xl font-semibold ${alert ? "text-red-600" : "text-stone-900"}`}>{value}</p>
     </div>
   );
   return href ? <Link href={href}>{inner}</Link> : inner;

@@ -5,6 +5,7 @@ import { requireUser } from "@/lib/auth";
 import { ANAMNESE } from "@/lib/anamnese";
 import { STATUS, age, fmtDate, fmtDateTime, todayKey, whatsappLink } from "@/lib/utils";
 import { Icon } from "@/components/Icon";
+import { PatientDocuments, PatientFinance } from "./PatientFinance";
 import { addEvolution, deletePhoto, saveAnamnesis, togglePatientActive, uploadPhotos } from "../actions";
 
 const TABS = [
@@ -13,6 +14,8 @@ const TABS = [
   { key: "evolucao", label: "Evolução" },
   { key: "fotos", label: "Fotos" },
   { key: "agendamentos", label: "Agendamentos" },
+  { key: "financeiro", label: "Financeiro" },
+  { key: "documentos", label: "Documentos" },
 ];
 
 export default async function PatientPage({
@@ -207,6 +210,9 @@ export default async function PatientPage({
           )}
         </div>
       )}
+
+      {aba === "financeiro" && <PatientFinance patientId={p.id} />}
+      {aba === "documentos" && <PatientDocuments patientId={p.id} />}
 
       {aba === "agendamentos" && (
         <div className="card divide-y divide-stone-100">

@@ -5,7 +5,7 @@ import { useEffect, useRef } from "react";
 import { saveUser } from "./actions";
 import { ROLES } from "@/lib/utils";
 
-type U = { id: string; name: string; email: string; role: string; specialty: string | null; color: string; active: boolean };
+type U = { id: string; name: string; email: string; role: string; specialty: string | null; color: string; active: boolean; commissionPct: number };
 
 export function UserForm({ user }: { user?: U }) {
   const [state, action, pending] = useFormAction(saveUser);
@@ -22,8 +22,9 @@ export function UserForm({ user }: { user?: U }) {
           {Object.entries(ROLES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
       </div>
-      <div className="sm:col-span-2"><label className="label">Especialidade</label><input name="specialty" className="input" placeholder="Ex.: Biomédica esteta" defaultValue={user?.specialty ?? ""} /></div>
+      <div><label className="label">Especialidade</label><input name="specialty" className="input" placeholder="Ex.: Biomédica esteta" defaultValue={user?.specialty ?? ""} /></div>
       <div><label className="label">Cor na agenda</label><input name="color" type="color" className="input h-10 p-1" defaultValue={user?.color ?? "#a855f7"} /></div>
+      <div><label className="label">Comissão (%)</label><input name="commissionPct" className="input" inputMode="decimal" defaultValue={user ? String(user.commissionPct).replace(".", ",") : "0"} /></div>
       <div><label className="label">Situação</label>
         <select name="active" className="input" defaultValue={user?.active === false ? "0" : "1"}><option value="1">Ativo</option><option value="0">Inativo</option></select>
       </div>

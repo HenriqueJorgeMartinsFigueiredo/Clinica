@@ -23,7 +23,7 @@ export default async function Equipe({ searchParams }: { searchParams: Promise<{
             <span className="h-4 w-4 shrink-0 rounded-full" style={{ background: u.color }} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium">{u.name} {!u.active && "(inativo)"}</p>
-              <p className="truncate text-xs text-stone-500">{u.email} · {ROLES[u.role]}{u.specialty ? ` · ${u.specialty}` : ""}</p>
+              <p className="truncate text-xs text-stone-500">{u.email} · {ROLES[u.role]}{u.specialty ? ` · ${u.specialty}` : ""}{u.commissionPct ? ` · comissão ${u.commissionPct}%` : ""}</p>
             </div>
             <Link href={`?editar=${u.id}`} className="text-sm text-brand-700 hover:underline">Editar</Link>
           </div>

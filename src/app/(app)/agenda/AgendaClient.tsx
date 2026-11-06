@@ -9,21 +9,22 @@ import { deleteAppointment, saveAppointment, setAppointmentStatus } from "./acti
 
 type Appt = {
   id: string; start: string; end: string; status: string; room: string | null; notes: string | null;
-  professionalId: string; procedureId: string | null; patientId: string;
+  professionalId: string; procedureId: string | null; patientId: string; budgetItemId: string | null;
   patient: { id: string; name: string; phone: string | null };
   procedure: { name: string } | null;
 };
 type Pro = { id: string; name: string; color: string };
 type Proc = { id: string; name: string; durationMin: number };
 type Pat = { id: string; name: string; phone: string | null };
+type Pkg = { id: string; patientId: string; procedureId: string | null; label: string; done: boolean };
 
 const START_H = 7, END_H = 21, SLOT = 30, ROW_PX = 40; // 30 min = 40px
 
 export function AgendaClient(props: {
   day: string; currentUserId: string; currentRole: string;
-  appointments: Appt[]; professionals: Pro[]; procedures: Proc[]; patients: Pat[];
+  appointments: Appt[]; professionals: Pro[]; procedures: Proc[]; patients: Pat[]; packages: Pkg[];
 }) {
-  const { day, appointments, professionals, procedures, patients } = props;
+  const { day, appointments, professionals, procedures, patients, packages } = props;
   const router = useRouter();
   const defaultFilter = props.currentRole === "PROFISSIONAL" ? props.currentUserId : "todos";
   const [filter, setFilter] = useState(defaultFilter);
@@ -147,6 +148,7 @@ export function AgendaClient(props: {
           professionals={professionals}
           procedures={procedures}
           patients={patients}
+          packages={packages}
           onClose={() => setModal(null)}
         />
       )}
@@ -156,7 +158,7 @@ export function AgendaClient(props: {
 
 function AppointmentModal(props: {
   day: string; appt?: Appt; professionalId?: string; time?: string;
-  professionals: Pro[]; procedures: Proc[]; patients: Pat[]; onClose: () => void;
+  professionals: Pro[]; procedures: Proc[]; patients: Pat[]; packages: Pkg[]; onClose: () => void;
 }) {
   const { appt, professionals, procedures, patients, onClose } = props;
   const [state, action, pending] = useFormAction(saveAppointment);
@@ -169,6 +171,9 @@ function AppointmentModal(props: {
 
   useEffect(() => { if (state?.ok) onClose(); }, [state, onClose]);
 
+  const [procedureId, setProcedureId] = useState(appt?.procedureId ?? "");
+  const [budgetItemId, setBudgetItemId] = useState(appt?.budgetItemId ?? "");
+  const myPackages = props.packages.filter((p) => p.patientId === patientId && (!p.done || p.id === appt?.budgetItemId));
   const matches = patientId ? [] : patients.filter((p) => p.name.toLowerCase().includes(patientQuery.toLowerCase())).slice(0, 6);
   const isNew = !patientId && patientQuery.trim().length > 1;
 
@@ -201,6 +206,9 @@ function AppointmentModal(props: {
             </div>
             <div className="flex flex-wrap gap-2">
               <Link href={`/pacientes/${appt.patientId}`} className="btn-secondary btn-sm">Abrir ficha da cliente</Link>
+              {!appt.budgetItemId && (
+                <Link href={`/pagamentos/novo?agendamento=${appt.id}`} className="btn-secondary btn-sm">Receber pagamento</Link>
+              )}
               {wa && (
                 <a href={wa} target="_blank" className="btn-sm btn bg-emerald-600 text-white hover:bg-emerald-700">
                   <Icon name="whatsapp" className="h-4 w-4" /> Confirmar no WhatsApp
@@ -250,13 +258,28 @@ function AppointmentModal(props: {
               <select
                 name="procedureId"
                 className="input"
-                defaultValue={appt?.procedureId ?? ""}
-                onChange={(e) => { const p = procedures.find((x) => x.id === e.target.value); if (p) setDuration(p.durationMin); }}
+                value={procedureId}
+                onChange={(e) => { setProcedureId(e.target.value); const p = procedures.find((x) => x.id === e.target.value); if (p) setDuration(p.durationMin); }}
               >
                 <option value="">— Avaliação / Consulta —</option>
                 {procedures.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
               </select>
             </div>
+            {myPackages.length > 0 && (
+              <div className="col-span-2 rounded-lg bg-violet-50 p-3">
+                <label className="label text-violet-800">Sessão de pacote / plano de tratamento</label>
+                <select name="budgetItemId" className="input" value={budgetItemId}
+                  onChange={(e) => {
+                    setBudgetItemId(e.target.value);
+                    const pk = props.packages.find((x) => x.id === e.target.value);
+                    if (pk?.procedureId) { setProcedureId(pk.procedureId); const p = procedures.find((x) => x.id === pk.procedureId); if (p) setDuration(p.durationMin); }
+                  }}>
+                  <option value="">Não é sessão de pacote (atendimento avulso)</option>
+                  {myPackages.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+                </select>
+                <p className="mt-1 text-xs text-violet-700">A sessão é contada quando o status ficar “Atendido”.</p>
+              </div>
+            )}
             <div className="col-span-2">
               <label className="label">Profissional</label>
               <select name="professionalId" className="input" defaultValue={appt?.professionalId ?? props.professionalId} required>

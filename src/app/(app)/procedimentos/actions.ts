@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
-import { str } from "@/lib/utils";
+import { parseMoney, str } from "@/lib/utils";
 
 export async function saveProcedure(fd: FormData) {
   await requireUser(["ADMIN"]);
@@ -11,9 +11,10 @@ export async function saveProcedure(fd: FormData) {
     name: str(fd, "name") ?? "Sem nome",
     category: str(fd, "category"),
     durationMin: Number(str(fd, "durationMin") ?? 60),
-    price: Number((str(fd, "price") ?? "0").replace(/\./g, "").replace(",", ".")) || 0,
+    price: parseMoney(fd.get("price")),
     sessions: Number(str(fd, "sessions") ?? 1),
     description: str(fd, "description"),
+    commissionPct: str(fd, "commissionPct") ? Math.min(100, Math.max(0, parseMoney(fd.get("commissionPct")))) : null,
     active: fd.get("active") !== "0",
   };
   if (id) await db.procedure.update({ where: { id }, data });
